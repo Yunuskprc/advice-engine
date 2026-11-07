@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Ortam ve veri
+.env
+data/
+docs/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
