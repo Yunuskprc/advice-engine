@@ -22,3 +22,18 @@ def jobs(
 @router.post("/demo", response_model=JobSubmitted)
 def submit_demo(runner: Annotated[JobRunner, Depends(get_runner)]) -> JobSubmitted:
     return JobSubmitted(id=runner.submit("demo"))
+
+
+@router.post("/sync-changes", response_model=JobSubmitted)
+def submit_sync(runner: Annotated[JobRunner, Depends(get_runner)]) -> JobSubmitted:
+    return JobSubmitted(id=runner.submit("sync_changes"))
+
+
+@router.post("/recompute-taste", response_model=JobSubmitted)
+def submit_recompute(runner: Annotated[JobRunner, Depends(get_runner)]) -> JobSubmitted:
+    return JobSubmitted(id=runner.submit("recompute_taste"))
+
+
+@router.post("/embed-movies", response_model=JobSubmitted)
+def submit_embed(runner: Annotated[JobRunner, Depends(get_runner)]) -> JobSubmitted:
+    return JobSubmitted(id=runner.submit("embed_movies"))

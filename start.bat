@@ -13,5 +13,5 @@ if not exist "frontend\dist\index.html" (
 rem Sunucu ayaga kalkinca tarayiciyi ac.
 start "" /b cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:8000"
 
-uv run film serve --host 0.0.0.0
+uv run film serve
 pause

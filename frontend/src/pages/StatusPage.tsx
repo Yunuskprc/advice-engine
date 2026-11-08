@@ -1,6 +1,13 @@
 import type { Job } from "../api/types";
 import StatusBadge from "../components/StatusBadge";
-import { useHealth, useJobs, useSubmitDemoJob } from "../hooks/useStatus";
+import { useRecomputeTaste } from "../hooks/useLibrary";
+import {
+  useEmbeddingStatus,
+  useHealth,
+  useJobs,
+  useSubmitDemoJob,
+  useSubmitEmbedJob,
+} from "../hooks/useStatus";
 
 const STATUS_TR: Record<Job["status"], string> = {
   queued: "Kuyrukta",
@@ -35,7 +42,7 @@ function JobRow({ job }: { job: Job }) {
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-neutral-800">
         <div
-          className={`h-full transition-all ${job.status === "failed" ? "bg-red-500" : "bg-sky-500"}`}
+          className={`h-full transition-all ${job.status === "failed" ? "bg-red-500" : "bg-amber-400"}`}
           style={{ width: `${job.status === "done" ? 100 : pct}%` }}
         />
       </div>
@@ -48,6 +55,9 @@ export default function StatusPage() {
   const health = useHealth();
   const jobs = useJobs();
   const submit = useSubmitDemoJob();
+  const embedding = useEmbeddingStatus();
+  const submitEmbed = useSubmitEmbedJob();
+  const recompute = useRecomputeTaste();
   const h = health.data;
 
   return (
@@ -82,9 +92,45 @@ export default function StatusPage() {
         )}
         <button
           onClick={() => health.refetch()}
-          className="mt-4 text-xs text-sky-400 active:text-sky-300"
+          className="mt-4 text-xs text-amber-400 active:text-amber-300"
         >
           Yeniden kontrol et
+        </button>
+      </Card>
+
+      <Card title="Embedding">
+        {embedding.data && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Hazır film</span>
+              <span className="text-neutral-400">
+                {embedding.data.ready.toLocaleString("tr-TR")} /{" "}
+                {embedding.data.total.toLocaleString("tr-TR")}
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-neutral-800">
+              <div
+                className="h-full bg-amber-400 transition-all"
+                style={{
+                  width: `${embedding.data.total ? (embedding.data.ready / embedding.data.total) * 100 : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => submitEmbed.mutate()}
+          disabled={submitEmbed.isPending}
+          className="mt-3 w-full rounded-xl bg-amber-400 text-neutral-950 py-3 font-medium active:bg-amber-500 disabled:opacity-50"
+        >
+          Embedding'leri üret
+        </button>
+        <button
+          onClick={() => recompute.mutate()}
+          disabled={recompute.isPending}
+          className="mt-2 w-full rounded-xl border border-neutral-700 py-3 font-medium hover:bg-neutral-800 disabled:opacity-50"
+        >
+          Zevkimi yeniden hesapla
         </button>
       </Card>
 
@@ -92,7 +138,7 @@ export default function StatusPage() {
         <button
           onClick={() => submit.mutate()}
           disabled={submit.isPending}
-          className="mb-2 w-full rounded-xl bg-sky-600 py-3 font-medium active:bg-sky-700 disabled:opacity-50"
+          className="mb-2 w-full rounded-xl bg-amber-400 text-neutral-950 py-3 font-medium active:bg-amber-500 disabled:opacity-50"
         >
           Demo işi başlat
         </button>

@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", Inter, ui-sans-serif, system-ui, sans-serif;
+
+  /* Gece Seansı paleti: nötrler sıcak-mor koyu, vurgu kehribar. */
+  --color-neutral-100: #f4f2f7;
+  --color-neutral-200: #e4e1ea;
+  --color-neutral-300: #d6d2dd;
+  --color-neutral-400: #a9a5b3;
+  --color-neutral-500: #8d8997;
+  --color-neutral-600: #6a6674;
+  --color-neutral-700: #3a3843;
+  --color-neutral-800: #2a2831;
+  --color-neutral-900: #1b1a21;
+  --color-neutral-950: #131218;
+  --color-amber-300: #ffcb66;
+  --color-amber-400: #f5b83d;
+  --color-amber-500: #dc9f28;
+}
+
 :root {
   color-scheme: dark;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-amber-400);
+  outline-offset: 2px;
 }

@@ -1,14 +1,18 @@
 """`film` komut satırı aracı."""
 
+import asyncio
 import time
 from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.progress import MofNCompleteColumn, Progress, TaskID
 
 from app.clients.ollama import OllamaClient, has_model
-from app.config import PROJECT_ROOT, get_settings
+from app.clients.tmdb import TmdbClient, TmdbError
+from app.config import PROJECT_ROOT, get_recommender_settings, get_settings
 from app.db import Database, DatabaseLockedError, apply_migrations
+from app.services.catalog import ImportStats, run_import
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 console = Console()
@@ -27,7 +31,7 @@ def _open_db() -> Database:
 
 @app.command()
 def serve(
-    host: Annotated[str | None, typer.Option(help="Örn. 0.0.0.0 (LAN erişimi)")] = None,
+    host: Annotated[str | None, typer.Option()] = None,
     port: Annotated[int | None, typer.Option()] = None,
     reload: Annotated[bool, typer.Option(help="Geliştirme modu")] = False,
 ) -> None:
@@ -60,16 +64,42 @@ def migrate() -> None:
 
 
 @app.command("import-catalog")
-def import_catalog() -> None:
-    """TMDB katalog importu (uygulama kapalıyken çalışır)."""
+def import_catalog(
+    limit: Annotated[int | None, typer.Option(min=1, help="En fazla bu kadar yeni ID dene")] = None,
+) -> None:
+    """TMDB katalog importu (uygulama kapalıyken çalışır, kaldığı yerden devam eder)."""
+    s = get_settings()
     db = _open_db()
+
+    async def run(progress: Progress, task: TaskID) -> ImportStats:
+        async with TmdbClient(s) as client:
+            return await run_import(
+                client,
+                db,
+                s,
+                get_recommender_settings(),
+                limit=limit,
+                on_total=lambda n: progress.update(task, total=n),
+                on_progress=lambda n: progress.update(task, completed=n),
+            )
+
     try:
-        apply_migrations(db.cursor(), get_settings().migrations_dir)
-        console.print(
-            "[yellow]Katalog importu Faz 1'de eklenecek.[/] Veritabanı yazılabilir durumda."
-        )
+        apply_migrations(db.cursor(), s.migrations_dir)
+        with Progress(
+            *Progress.get_default_columns(), MofNCompleteColumn(), console=console
+        ) as progress:
+            task = progress.add_task("Katalog alınıyor", total=None)
+            stats = asyncio.run(run(progress, task))
+        total = db.cursor().execute("SELECT count(*) FROM movies").fetchone()[0]  # type: ignore[index]
+    except TmdbError as e:
+        console.print(f"[bold red]Hata:[/] {e}")
+        raise typer.Exit(1) from e
     finally:
         db.close()
+    console.print(
+        f"[green]Bitti.[/] Denenen: {stats.attempted}, yazılan: {stats.stored}, "
+        f"eşik altı: {stats.skipped}, başarısız: {stats.failed}. Katalogda {total} film var."
+    )
 
 
 @app.command("ollama-ping")
